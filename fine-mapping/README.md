@@ -205,12 +205,12 @@ for i in {1..26}; do
   the_ld="$ldpath$the_section";
   the_trait=$(cut -f 24 $meta_val | tail -n +2 | awk "NR==$i");
   the_ancestry= # Set one of EUR, EAS, SAS, AMR, AFR
-  if [[ $the_trait = "HS" ]]; then
-    n=173336
-  elif [[ $the_trait = "SF" ]]; then
-    n=167996
-  elif [[ $the_trait = "LS" ]]; then
-    n=173346
+  if [[ $the_trait = "TRAIT_1" ]]; then
+    n=XXX
+  elif [[ $the_trait = "TRAIT_2" ]]; then
+    n=XXX
+  elif [[ $the_trait = "TRAIT_3" ]]; then
+    n=XXX
   else
     echo "Error: trait not found"
   fi

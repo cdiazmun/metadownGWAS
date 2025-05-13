@@ -45,6 +45,3 @@ How to manually remove the genes mapped to the MHC region:
 
 Perform MAGMA analysis. I typically select GTEx v8 tissue types for gene expression analysis.
 
-## MAGMA
-
-_To be done_

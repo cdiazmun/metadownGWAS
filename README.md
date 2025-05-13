@@ -12,5 +12,5 @@ The `README.md` file of each section will serve as a guide/tutorial. Please be a
 7. Phenome-wide association study (PheWAS)
 8. Mendelian randomization (MR)
 9. Colocalization analysis
-10. Drug analysis
+10. Drug analysis - *unpublished, coming soon*
 

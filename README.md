@@ -8,7 +8,7 @@ The `README.md` file of each section will serve as a guide/tutorial. Please be a
 3. Fine-mapping
 4. Genetic correlation & heritability estimation (LDSC)
 5. Functional annotation
-6. Gene set enrichment analysis (GSEA) - *Work in progress*
+6. Gene set enrichment analysis (GSEA)
 7. Mendelian Randomization - *Work in progress*
 8. Colocalization analysis - *TBD*
 9. Phenome-wide association study (PheWAS)

@@ -1,4 +1,4 @@
-# Mendelian Randomization
+# Mendelian randomization
 
 Mendelian randomization (MR) is a method in which genetic variants (SNPs) are used as instrumental variables (IVs) to infer causality between two traits. The IVs need to be strongly associated with trait A (exposure) and associated with trait B (outcome) only through their effects on trait A. Because of that, a key step in MR analysis is the selection of valid or strong IVs (*i.e.,* removal of weak IVs). For this, there are a number of approaches, from LD clumping to avoid including variants in LD with another variant that influences the outcome through a different mechanism, to horizontal pleiotropy (when a gene/genetic variant affects two different phenotypes independently) estimation and removal of outliers. 
 

@@ -54,7 +54,9 @@ Similar to the [functional annotation](https://github.com/cdiazmun/metadownGWAS/
 **Output:** Genes whose predicted expression is associated with the trait. 
 
 ## SMR
-[Integration of summary data from GWAS and eQTL studies predicts complex trait gene targets](https://www.nature.com/articles/ng.3538) - [Tool website]()
+[Integration of summary data from GWAS and eQTL studies predicts complex trait gene targets](https://www.nature.com/articles/ng.3538)
+
+[Tool website]()
 
 **Type:** Transcriptome-wide association study (TWAS). Variant level. 
 

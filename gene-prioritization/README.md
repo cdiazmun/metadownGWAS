@@ -4,7 +4,7 @@ Similar to the [functional annotation](https://github.com/cdiazmun/metadownGWAS/
 ## MAGMA
 [MAGMA: Generalized Gene-Set Analysis of  GWAS Data](https://dx.plos.org/10.1371/journal.pcbi.1004219)
 
-[Tool website]()
+[CTGLAB](https://cncr.nl/research/magma/)
 
 **Type:** Gene-based association test. 
 
@@ -17,7 +17,7 @@ Similar to the [functional annotation](https://github.com/cdiazmun/metadownGWAS/
 ## fastBAT
 [Fast set-based association analysis  using summary data from GWAS  identifies novel gene loci for human  complex traits](https://www.nature.com/articles/srep32894)
 
-[Tool website]()
+[YangLab](https://yanglab.westlake.edu.cn/software/gcta/#fastBAT)
 
 **Type:** Gene-based association test.
 
@@ -30,7 +30,7 @@ Similar to the [functional annotation](https://github.com/cdiazmun/metadownGWAS/
 ## DEPICT
 [Biological interpretation of genome-wide  association studies using predicted gene functions](https://www.nature.com/articles/ncomms6890)
 
-[Tool website]()
+[GitHub](https://github.com/perslab/depict)
 
 **Type:** Gene prioritization and pathway enrichment
 

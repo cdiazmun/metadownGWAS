@@ -150,6 +150,63 @@ write.table(do.call(rbind,b), paste0(out.fname,".bivar.lava"), row.names=F,quote
 print(paste0("Done! Analysis output written to ",out.fname,".*.lava"))
 ```
 
+## HDL-L
 
+### Installation
+I tried to follow their [instructions](https://github.com/zhenin/HDL/wiki/Installation-and-update) but it didn't work, so I sorted it out by downloading it manually to a specific location and then installing it with `devtools`:
+``` bash
+git clone https://github.com/zhenin/HDL.git
+```
+(Inside R)
+``` r
+devtools::install("path/to/HDL")
+```
 
+### Reference panel
+To download the [reference panel](https://github.com/zhenin/HDL/wiki/Reference-panels) we have to do the following inside `/path/to/reference`:
+``` bash
+wget -c -t 1 https://www.dropbox.com/s/6js1dzy4tkc3gac/UKB_imputed_SVD_eigen99_extraction.tar.gz?dl=0 --no-check-certificate -O ./UKB_imputed_SVD_eigen99_extraction.tar.gz
+```
+
+### Reformat summary stats
+I changed the column names of the sumstats and selected only the necessary ones for HDL to run, before running the script to [reformat](https://github.com/zhenin/HDL/wiki/Format-of-summary-statistics) the sumstats accordingly. Then I used the `HDL.data.wrangling.R` script that comes in the installation folder:
+``` bash
+Rscript /path/to/opt/HDL/HDL.data.wrangling.R \
+gwas.file=input_sumstats/trait1.txt.gz \
+LD.path=path/to/databases/HDL/LDfile/UKB_imputed_SVD_eigen99_extraction \
+SNP=SNP \
+A1=A1 \
+A2=A2 \
+N=N \
+b=b \
+se=se \
+output.file=output/trait1.wrangled \
+log.file=output/data.wrangling.log.trait1
+```
+
+### Running HDL
+As it happens with LAVA, I found more convenient to run it from the command line using a predefined Rscript:
+``` bash
+Rscript /path/to/opt/HDL/HDL.run.R \
+gwas1.df=output/trait1.wrangled.hdl.rds \
+gwas2.df=output/trait2.wrangled.hdl.rds \
+LD.path=/path/to/databases/HDL/LDfile/UKB_imputed_SVD_eigen99_extraction \
+output.file=result/hdl.trait1.trait2.Rout
+```
+
+### Running HDL-L
+Here I also ended up encountering many problems, especially when trying to parallelize the job... So at the end I ran it using a single core, but it is still faster than LAVA.
+
+``` r
+Rscript /path/to/opt/HDL/HDL.L.run.R \
+gwas1.df=output/hard.stool.wrangled.hdl.rds \
+gwas2.df=output/loose.stool.wrangled.hdl.rds \
+Trait1name="HS" Trait2name="LS" \
+LD.path=/path/to/databases/HDL/LDfile/LD.path/ \
+bim.path=/path/to/databases/HDL/bimfile/bimfile/ \
+N0= # Set a number \
+output.file=output/raw.gwas.1core.Rout \
+type="WG" \
+cores=1 \
+```
 

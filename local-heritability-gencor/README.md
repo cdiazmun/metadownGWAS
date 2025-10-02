@@ -199,9 +199,9 @@ Here I also ended up encountering many problems, especially when trying to paral
 
 ``` r
 Rscript /path/to/opt/HDL/HDL.L.run.R \
-gwas1.df=output/hard.stool.wrangled.hdl.rds \
-gwas2.df=output/loose.stool.wrangled.hdl.rds \
-Trait1name="HS" Trait2name="LS" \
+gwas1.df=output/trait1.wrangled.hdl.rds \
+gwas2.df=output/trait2.wrangled.hdl.rds \
+Trait1name="trait1" Trait2name="trait2" \
 LD.path=/path/to/databases/HDL/LDfile/LD.path/ \
 bim.path=/path/to/databases/HDL/bimfile/bimfile/ \
 N0= # Set a number \

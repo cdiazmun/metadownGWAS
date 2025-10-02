@@ -41,6 +41,115 @@ Once everything is setup and worked good, then we can run the mixer script for c
 ``` bash
 ${MIXER_PY} fit1 $MIXER_COMMON_ARGS --trait1-file input_sumstats/trait1.mixer.sumstats.gz --out output/trait1.fit
 ${MIXER_PY} fit1 $MIXER_COMMON_ARGS --trait1-file input_sumstats/trait2.mixer.sumstats.gz --out output/trait2.fit
-
 ```
+
+## LAVA
+The [GitHub](https://github.com/josefin-werme/LAVA) page is well explained. LAVA is available as an R package, which is quite handy:
+
+``` r
+if (!require("remotes", quietly=T)) install.packages("remotes")
+remotes::install_github("josefin-werme/LAVA")
+```
+Then you need [LD reference data](https://github.com/josefin-werme/LAVA/blob/main/REFERENCE.md), the input info file (see below), the correctly formatted summary statistics (instructions on the GitHub page), and the [locus definition file](https://github.com/josefin-werme/LAVA/tree/main/support_data). Although you can run it inside R line by line let's say, it's more straightforward to run it using a predefined Rscript that performs the univariate or bivariate analysis across all genomic loci. It is quite slow to run, it takes almost the whole day actually. 
+
+The input info file should look like this:
+
+| phenotype | cases | controls | prevalence | filename |
+|-----------|-------|----------|------------|----------|
+| trait1 | 1,000 | 10,000 | 0.10 | /path/to/trait1.sumstats.gz |
+| trait2 | 2,000 | 20,000 | 0.12 | /path/to/trait2.sumstats.gz |
+| trait3 | 1,500 | 5,000 | 0.18 | /path/to/trait3.sumstats.gz |
+
+### Univariate Rscript
+``` bash
+Rscript lava.univ.R "/path/to/databases/lava/lava-ukb-v1.1" "/path/to/databases/lava/blocks_s2500_m25_f1_w200.GRCh37_hg19.locfile" "input_info_file.txt" "trait"
+```
+```r
+# command line arguments, specifying input/output file names and phenotype subset
+arg = commandArgs(T); ref.prefix = arg[1]; loc.file = arg[2]; info.file = arg[3]; sample.overlap.file = NULL; phenos = arg[4]; out.fname = arg[4]
+
+### Load package
+library(LAVA)
+
+### Read in data
+loci = read.loci(loc.file); n.loc = nrow(loci)
+input = process.input(info.file, sample.overlap.file, ref.prefix, phenos)
+
+### Set univariate pvalue threshold
+univ.p.thresh = #[SET]
+
+### Analyse
+print(paste("Starting LAVA analysis for",n.loc,"loci"))
+progress = ceiling(quantile(1:n.loc, seq(.05,1,.05)))   # (if you want to print the progress)
+
+u=list()
+for (i in 1:n.loc) {
+        if (i %in% progress) print(paste("..",names(progress[which(progress==i)])))     # (printing progress)
+        locus = process.locus(loci[i,], input)                                          # process locus
+        
+        # It is possible that the locus cannot be defined for various reasons (e.g. too few SNPs), so the !is.null(locus) check is necessary before calling the analysis functions.
+        if (!is.null(locus)) {
+                # extract some general locus info for the output
+                loc.info = data.frame(locus = locus$id, chr = locus$chr, start = locus$start, stop = locus$stop, n.snps = locus$n.snps, n.pcs = locus$K)
+                
+                # run the univariate test
+                loc.out = run.univ(locus)
+                u[[i]] = cbind(loc.info, loc.out)
+       }
+}
+
+# save the output
+write.table(do.call(rbind,u), paste0(out.fname,".univ.lava"), row.names=F,quote=F,col.names=T)
+
+print(paste0("Done! Analysis output written to ",out.fname,".*.lava"))
+```
+
+### Bivariate Rscript
+``` bash
+Rscript lava.biv.R "/path/to/databases/lava/lava-ukb-v1.1" "/path/to/databases/lava/blocks_s2500_m25_f1_w200.GRCh37_hg19.locfile" "input_info_file.txt" "trait1;trait2" "trait1.trait2"
+```
+```r
+# command line arguments, specifying input/output file names and phenotype subset
+arg = commandArgs(T); ref.prefix = arg[1]; loc.file = arg[2]; info.file = arg[3]; sample.overlap.file = NULL; phenos = unlist(strsplit(arg[4],";")); out.fname = arg[5]
+
+### Load package
+library(LAVA)
+
+### Read in data
+loci = read.loci(loc.file); n.loc = nrow(loci)
+input = process.input(info.file, sample.overlap.file, ref.prefix, phenos)
+
+### Set univariate pvalue threshold
+univ.p.thresh = #[SET]
+
+### Analyse
+print(paste("Starting LAVA analysis for",n.loc,"loci"))
+progress = ceiling(quantile(1:n.loc, seq(.05,1,.05)))   # (if you want to print the progress)
+
+u=b=list()
+for (i in 1:n.loc) {
+        if (i %in% progress) print(paste("..",names(progress[which(progress==i)])))     # (printing progress)
+        locus = process.locus(loci[i,], input)                                          # process locus
+        
+        # It is possible that the locus cannot be defined for various reasons (e.g. too few SNPs), so the !is.null(locus) check is necessary before calling the analysis functions.
+        if (!is.null(locus)) {
+                # extract some general locus info for the output
+                loc.info = data.frame(locus = locus$id, chr = locus$chr, start = locus$start, stop = locus$stop, n.snps = locus$n.snps, n.pcs = locus$K)
+                
+                # run the univariate and bivariate tests
+                loc.out = run.univ.bivar(locus, univ.thresh = univ.p.thresh)
+                u[[i]] = cbind(loc.info, loc.out$univ)
+                if(!is.null(loc.out$bivar)) b[[i]] = cbind(loc.info, loc.out$bivar)
+        }
+}
+
+# save the output
+write.table(do.call(rbind,u), paste0(out.fname,".univ.lava"), row.names=F,quote=F,col.names=T)
+write.table(do.call(rbind,b), paste0(out.fname,".bivar.lava"), row.names=F,quote=F,col.names=T)
+
+print(paste0("Done! Analysis output written to ",out.fname,".*.lava"))
+```
+
+
+
 

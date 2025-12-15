@@ -1,5 +1,5 @@
 # metadownGWAS
-Reproducible pipeline to perform a GWAS meta-analysis and downstream analysis. This repository contains all the information to execute the post-GWAS analysis in a transparent and reproducible manner.
+Reproducible pipeline to perform a GWAS meta-analysis and downstream functional annotation and processing. This repository contains all the information to execute the post-GWAS analysis in a transparent and reproducible manner.
 
 The `README.md` file of each section will serve as a guide/tutorial. Please be aware that most of the scripts will need to be adapted to your files, path, and directory organization. The pipeline consists of the following steps:
 

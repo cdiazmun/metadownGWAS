@@ -197,3 +197,89 @@ Rscript ~/opt/prsice-2/PRSice.R \
 	--extract phenotype.valid \
 	--ignore-fid
 ```
+
+## Per-sample PRS
+The best PRS model will be produced with a subset of the GWAS SNPs, which are the ones that help the most to predict the risk of the disease. We can then use that set of SNPs to calculate the polygenic score of an individual for which we have the genotype available. If we have the genotypes of hundreds of thousando of individuals we can calculate the score for all of them and stratify them according to their genetic risk to suffer the disease under study.
+
+We are going to work with a case in which the PRS for a Phenotype has already been calculated in an independent cohort (not included in our GWAS meta-analysis). That PRS model is based on ~50K variants. We need to assign a score for the presence/absence of each of the risk alleles for this set of variants in each individual from the UK Biobank (UKB). This score will be weighted by the beta, so the genetic effects of each risk allele. Besides stratifying the individuals by their associated PRS, we can also use this per-sample PRS to test for association with ICD10 codes to see if individuales with a higher score there is also higher prevalence of other conditions. This kind of analysis tell us how genetically similar are different conditions. It's another layer on top of genetic correlation or Mendelian randomization analyses. 
+
+This pipeline is based on plink2 and some data handling with R. We need the following input files:
+-	`weights`: A data frame with the ~50K variants obtained from the PRS and their betas.
+-	`genotypes`: We will use imputed data from the UKB in `.pgen/.psam/.pvar` format, split per chromosome. 
+
+### Check input files
+The first thing we need to do is to inspect our `weights` file, which will look something like this:
+
+|CHR	|BP	|A1	|A2	|SNP	|ID	|BETA	
+|-------|-------|-------|-------|-------|-------|-------
+|1	|100066515	|T	|C	|1:100066515:C:T	|rs1234567	|0.005516434
+|1	|100097419	|C	|T	|1:100097419:T:C	|rs1234567	|0.004740695
+|1	|100116253	|T	|G	|1:100116253:G:T	|rs1234567	|0.003353760
+|1	|100177526	|A	|G	|1:100177526:G:A	|rs1234567	|0.011832565
+|1	|100196224	|T	|C	|1:100196224:C:T	|rs1234567	|0.015933962
+
+In this case, `A1` will be the risk allele. We will need the `ID` column to extract the variants from the `genotype` files and the `SNP`column for the last step when calculating the scores. We need to check if the genome build of the `weights` file and the `genotype` files is the same and how are the variants reported in the `genotype` files. As I'm saying, in this case it's reported with the rsID, that's why we use the `ID` column. 
+
+### Extract the PRS variants
+Use the `weights` file to extract only the rsIDs, without headers, and save it to `rsids.prs.txt`. Then run:
+``` bash
+for i in {1..22};
+	do plink2 --bgen /path/to/Genotypes/Imputation_field-22828/ukb22828_c${i}_b0_v3.bgen \
+	ref-first \
+	--sample /path/to/Genotypes/Imputation_field-22828/ukb22828_c${i}_b0_v3_s487203.sample \
+	--extract /path/to/Weights/rsids.prs.txt \
+	--make-pgen \
+	--out ukb_prs_genotypes_per_chromosome/ukb.prs.genotypes.ref1.c${i};
+done
+```
+### Merge the files
+If there are some rsIDs that correspond to multiallelic variants, the merging will fail because it will encounter more than one variant for the same rsID. To avoid this happening we have different options but the easiest is to simply reset all variants to `CHR:POSITION:REF:ALT`: 
+``` bash
+for i in {1..22};
+	do plink2 --pfile ukb_prs_genotypes_per_chromosome/ukb.prs.genotypes.ref1.c$i \
+	--set-all-var-ids @:#:\$r:\$a \
+	--make-pgen \
+	--out ukb_prs_genotypes_per_chromosome_setvars/ukb.prs.genotypes.ref1.setvars.c$i;
+done
+```
+Then we create a list with all files we want to merge:
+``` bash
+ll ukb_prs_genotypes_per_chromosome_setvars/*.pgen | cut -d " " -f 10 | cut -d "." -f 1,2,3,4,5,6 > merge_list_setvars.txt
+```
+And we finally merge the files:
+``` bash
+plink2 --pmerge-list merge_list_setvars.txt --make-pgen --out ukb.prs.genotypes.ref1.setvars.allchr
+```
+### Calculate the polygenic scores
+We are going to calculate the score with `plink2` default parameters. This means we are going to use the **_additive model_** to calculate the allelic risk effects (as done with most GWAS). For what I could read, `plink2` would check the risk allele (A1) in the .pvar UKB genotype file andflip the alelle if necessary to calculate the score. The `ukb.prs.genotypes.ref1.setvars.allchr` generated should look like this:
+
+|#CHROM  |POS     |ID      |REF     |ALT
+|--------|--------|--------|--------|---
+|1       |835499  |1:835499:A:G    |A       |G
+|1       |890104  |1:890104:G:A    |G       |A
+|1       |902069  |1:902069:T:C    |T       |C
+|1       |1038796 |1:1038796:G:A   |G       |A
+|1       |1219941 |1:1219941:G:A   |G       |A
+
+And the `weights` file to be used in this step should only contain three columns (be aware we changed `SNP` by `ID` in the column name to match the `.pvar` file):
+
+|ID      |A1      |BETA
+|--------|--------|----
+|1:100066515:C:T |T       |0.00551643416434031
+|1:100097419:T:C |C       |0.00474069531077363
+|1:100116253:G:T |T       |0.00335376003369533
+|1:100177526:G:A |A       |0.0118325647205171
+|1:100196224:C:T |T       |0.0159339621510669
+
+Once we have both files like this, we can calculate the scores:
+``` bash
+plink2 --pfile ukb.prs.genotypes.ref1.setvars.allchr --score SNP_A1_BETA_PRS_WEIGHTS.txt 1 2 3 header --out prs.ukb.all.samples
+```
+The output should look like this:
+
+|#FID    |IID     |ALLELE_CT       |NAMED_ALLELE_DOSAGE_SUM |SCORE1_AVG
+|--------|--------|----------------|------------------------|----------
+|xxx     |xxx     |110500  |22454.789       |4.84725e-05
+|xxx     |xxx     |110500  |23448.194       |5.28227e-05
+|xxx     |xxx     |110500  |23588.847       |6.82782e-05
+|xxx     |xxx     |110500  |23704.081       |7.14413e-05

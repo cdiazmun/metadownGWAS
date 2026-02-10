@@ -250,8 +250,11 @@ And we finally merge the files:
 ``` bash
 plink2 --pmerge-list merge_list_setvars.txt --make-pgen --out ukb.prs.genotypes.ref1.setvars.allchr
 ```
+
 ### Calculate the polygenic scores
-We are going to calculate the score with `plink2` default parameters. This means we are going to use the **_additive model_** to calculate the allelic risk effects (as done with most GWAS). For what I could read, `plink2` would check the risk allele (A1) in the .pvar UKB genotype file andflip the alelle if necessary to calculate the score. The `ukb.prs.genotypes.ref1.setvars.allchr` generated should look like this:
+We are going to calculate the score with `plink2` default parameters. This means we are going to use the **_additive model_** to calculate the allelic risk effects (as done with most GWAS). For what I could read, `plink2` would check the risk allele (A1) in the .pvar UKB genotype file andflip the alelle if necessary to calculate the score. However, palindromic SNPs may cause errors that can't be fixed. So we are going to perform a sanity check before proceding with the scoring. 
+
+The `ukb.prs.genotypes.ref1.setvars.allchr` generated should look like this:
 
 |#CHROM  |POS     |ID      |REF     |ALT
 |--------|--------|--------|--------|---
@@ -271,7 +274,43 @@ And the `weights` file to be used in this step should only contain three columns
 |1:100177526:G:A |A       |0.0118325647205171
 |1:100196224:C:T |T       |0.0159339621510669
 
-Once we have both files like this, we can calculate the scores:
+Let's calculate the allele frequencies from the `genotype` files:
+``` bash
+plink2 --pfile ukb.prs.genotypes.ref1.setvars.allchr --freq --out ukb.prs.genotypes.ref1.setvars.allchr.freqs
+```
+And compare them with the `weights` file. We're obtaining the EAF from the corresponding GWAS:
+
+``` r
+# Import the data frames
+afgeno <- fread("ukb.prs.genotypes.ref1.setvars.allchr.afreq")
+weights <- fread("SNP_A1_BETA_PRS_WEIGHTS.txt")
+gwas <- fread("gwas.txt.gz")
+
+gwas1 <- gwas %>%
+  # Create a column with the markers to join with the weights file
+  mutate(SNP = paste(CHR,POS,OA,EA, sep = ":")) %>%
+  # Rename the columns to homogenize them with the weights file
+  rename(rsID = ID, ID = SNP, A1 = EA) %>%
+  # Retrieve the 50K variants from the PRS
+  filter(ID %in% weights$ID) %>%
+  # Get only the columns we need
+  select(ID, A1, EAF)
+
+# Add the effect allele frequency to the weights file
+weights1 <- weights %>% 
+  inner_join(gwas1, by = c("ID", "A1")) 
+
+# Rename the columns to homogenize with the weights file and select the columns we need
+afgeno1 <- afgeno %>% 
+  rename(A1 = ALT, AF_GENO = ALT_FREQS) %>% 
+  select(ID, A1, AF_GENO)
+
+# Merge the weights and genotype files and calculate the difference
+mergedf1 <- weights1 %>% 
+  inner_join(afgeno1, by = c("ID", "A1")) %>% 
+  mutate(DiffAF = abs(EAF - AF_GENO))
+```
+In our case, there were no differences in any allele frequency (max = 0.037). So we should be fine. We can therefore calculate the scores:
 ``` bash
 plink2 --pfile ukb.prs.genotypes.ref1.setvars.allchr --score SNP_A1_BETA_PRS_WEIGHTS.txt 1 2 3 header --out prs.ukb.all.samples
 ```

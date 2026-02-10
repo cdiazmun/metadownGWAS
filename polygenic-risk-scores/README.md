@@ -221,7 +221,7 @@ The first thing we need to do is to inspect our `weights` file, which will look 
 In this case, `A1` will be the risk allele. We will need the `ID` column to extract the variants from the `genotype` files and the `SNP`column for the last step when calculating the scores. We need to check if the genome build of the `weights` file and the `genotype` files is the same and how are the variants reported in the `genotype` files. As I'm saying, in this case it's reported with the rsID, that's why we use the `ID` column. 
 
 ### Extract the PRS variants
-Use the `weights` file to extract only the rsIDs, without headers, and save it to `rsids.prs.txt`. Then run:
+Use the `weights` file to extract only the rsIDs, without headers, and save it to `rsids.prs.txt`. Extracting the variants is an intense task apparently, it took 15h to run the following command:
 ``` bash
 for i in {1..22};
 	do plink2 --bgen /path/to/Genotypes/Imputation_field-22828/ukb22828_c${i}_b0_v3.bgen \

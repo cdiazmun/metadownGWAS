@@ -13,5 +13,5 @@ The `README.md` file of each section will serve as a guide/tutorial. Please be a
 8. Mendelian randomization (MR)
 9. Colocalization analysis
 10. Polygenic risk scores (PRS)
-11. Drug analysis - *unpublished, coming soon*
+11. Drug signature analysis
 
